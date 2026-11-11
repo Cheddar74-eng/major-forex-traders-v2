@@ -1,0 +1,47 @@
+
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download project files
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Extract Android project
+        run: |
+          mkdir extracted
+          ZIP=$(find . -maxdepth 1 -name '*.zip' | head -n 1)
+          test -n "$ZIP"
+          unzip -q "$ZIP" -d extracted
+          test -f extracted/major-forex-traders-v2/app/build.gradle
+
+      - name: Build APK
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: '8.9'
+          build-root-directory: extracted/major-forex-traders-v2
+          arguments: assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: major-forex-traders-debug-apk
+          path: extracted/major-forex-traders-v2/app/build/outputs/apk/debug/app-debug.apk
+          
